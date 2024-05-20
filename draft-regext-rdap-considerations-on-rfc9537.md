@@ -337,7 +337,7 @@ Take for example the "tel" property of jCard, which maybe rendered as:
 
 Should a server redact the phone extension, how does the tel URI get
 expressed: `tel:+1-555-555-1234;ext=` or `tel:+1-555-555-1234`? Is this redaction
-by removal or partial value? In both cases, JSONPath does not have the fidelity
+by removal or partial value? In both cases, JSONPath does not have the precision
 to specify which parts of the string are to be redacted.
 
 # Complexity
