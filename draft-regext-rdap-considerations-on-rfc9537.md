@@ -223,11 +223,12 @@ way of determining which parts were redacted. The example given in the RFC is of
 “Vancouver\nBC\n1239\n" but the client has no means of determining if the redacted portion of
 the string comes before, after, or in the middle of the string given.
 
+
 The same issue applies to JSON objects and arrays. Though some readers may deduce that
 redaction by partial value only applies to strings, the RFC does not state this.
 
 Therefore, for all practical purposes there is no distinction between redaction by partial value
-and redaction by empty value.
+and redaction by empty value. 
 
 # Overlapping and Nesting Redactions
 
@@ -317,6 +318,27 @@ used in [@!RFC9537] is problematic as it relates to interoperability between cli
 To help with testing, a corpus of RDAP responses using [@!RFC9537] was created: <https://github.com/anewton1998/redacted_examples>.
 As a consequence, shortcomings were discovered in the JSONPath libraries being used and 
 developers on both teams attempted various workarounds to no avail.
+
+# Pitfalls
+
+There also exist many "corner cases" that server operators need to consider.
+Take for example the "tel" property of jCard, which maybe rendered as:
+
+```
+[ 
+  "tel",
+  {
+    "type": ["voice"]
+  },
+  "uri",
+  "tel:+1-555-555-1234;ext=1234"
+]  
+```
+
+Should a server redact the phone extension, how does the tel URI get
+expressed: `tel:+1-555-555-1234;ext=` or `tel:+1-555-555-1234`? Is this redaction
+by removal or partial value? In both cases, JSONPath does not have the fidelity
+to specify which parts of the string are to be redacted.
 
 # Complexity
 
