@@ -10,7 +10,7 @@ ipr= "trust200902"
 name = "Internet-Draft"
 value = "draft-newton-regext-rdap-considerations-on-rfc9537-00"
 stream = "IETF"
-status = "standard"
+status = "informational"
 date = 2024-05-20T00:00:00Z
 
 [[author]]
@@ -64,6 +64,10 @@ This can be done in many ways depending on the client’s environment. For many 
 method can be to make visual representations, such as changing a color or showing an icon,
 where the information would normally be expected to be found by a user or near that place.
 Clients may also use audio cues in a similar fashion, especially those for the visually impaired.
+
+The information in this document was obtained through the experience of attempting to implement
+[@!RFC9537] in an RDAP web client, <https://lookup.icann.org>, and in an RDAP command-line
+interface client, <https://github.com/icann/icann-rdap>.
 
 # Time of this Document
 
