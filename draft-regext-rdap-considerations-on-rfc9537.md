@@ -67,9 +67,12 @@ Clients may also use audio cues in a similar fashion, especially those for the v
 
 The information in this document was obtained through the experience of attempting to implement
 [@!RFC9537] in an RDAP web client, <https://lookup.icann.org>, and in an RDAP command-line
-interface client, <https://github.com/icann/icann-rdap>.
+interface client, <https://github.com/icann/icann-rdap>. As part of this effort, the server-side 
+aspects of RFC 9537 were implemented in the RDAP server also at <https://github.com/icann/icann-rdap>.
+Finally, a corpus of test cases for RDAP responses was created at 
+<https://github.com/anewton1998/redacted_examples>.
 
-# Time of this Document
+# Timing of this Document
 
 The issues raised in this document have surfaced after the publication of RFC 9537, therefore it
 is reasonable to ask why these issues were not brought forward while this document was under
@@ -84,11 +87,14 @@ after publication of RFC 9537.
 This is the default redaction method in [@!RFC9537], and the most difficult to implement.
 
 In this method, the portions of the RDAP JSON response that are redacted are not present but
-are specified in the “prePath” string. Because the information is removed from the response,
+may be specified in the “prePath” string. Because the information is removed from the response,
 the client will yield either an empty set when evaluating the “prePath” expression against the
 response or an incorrect value (see note at the end of this section regarding arrays). In other
 words, the client has no means to identify the information that has been redacted using the
 value of “prePath”.
+
+To further complicate the usage of "prePath", [@!RFC9537] makes it OPTIONAL and does not
+require its usage, though every example in the RFC of redaction by removal does use "prePath".
 
 [@!RFC9537] gives the following advice to the client in Section 5.1:
 
@@ -339,6 +345,23 @@ Should a server redact the phone extension, how does the tel URI get
 expressed: `tel:+1-555-555-1234;ext=` or `tel:+1-555-555-1234`? Is this redaction
 by removal or partial value? In both cases, JSONPath does not have the precision
 to specify which parts of the string are to be redacted.
+
+Additionally, the "tel" property is not required to be a tel URI but maybe unstructured
+text. For example:
+
+```
+[ 
+  "tel",
+  {
+    "type": ["voice"]
+  },
+  "text",
+  "1-555-555-1234 x1234"
+]  
+```
+
+As the string to be redacted by partial value may take many forms, clients have no
+formal means of determing which part is to be redacted.
 
 # Complexity
 
