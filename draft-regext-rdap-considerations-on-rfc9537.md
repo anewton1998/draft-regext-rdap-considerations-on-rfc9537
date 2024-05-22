@@ -104,9 +104,12 @@ require its usage, though every example in the RFC of redaction by removal does 
 > redacted response. The client can key off the "name" member for display logic
 > related to the redaction.
 
-In other words, the client is to know the information that was removed using the “name”
-member of the redaction directive described in Section 4.2 of [@!RFC9537]. The “name” member is
-a JSON object that can take either a “description” JSON string or a “type” JSON string:
+In other words, the client may be able to know the information that was removed using the “name”
+member of the redaction directive described in Section 4.2 of [@!RFC9537], though the RFC
+does not explain how the client is to go about doing this nor does it use normative RFC language
+to indicate this is the nature of an implementation. 
+
+The “name” member is a JSON object that takes either a “description” JSON string or a “type” JSON string:
 
 ```
 “name” : {
