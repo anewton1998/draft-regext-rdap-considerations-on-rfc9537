@@ -30,8 +30,7 @@ the Registration Data Access Protocol (RDAP) Response”. The considerations in 
 have arisen from problems raised by two separate teams attempting to implement RFC 9537 in
 both an RDAP web client and an RDAP command line client. Some of these problems may be
 insurmountable, leaving portions of RFC 9537 non-interoperable between clients and servers,
-while other problems place a high degree of complexity upon clients. The author(s) of this
-document may submit it as an Internet Draft to the IETF’s REGEXT working group
+while other problems place a high degree of complexity upon clients.
 
 {mainmatter}
 
@@ -75,7 +74,7 @@ Finally, a corpus of test cases for RDAP responses was created at
 # Timing of this Document
 
 The issues raised in this document have surfaced after the publication of RFC 9537, therefore it
-is reasonable to ask why these issues were not brought forward while this document was under
+is reasonable to ask why these issues were not brought forward while RFC 9537 was under
 review by the IETF’s REGEXT working group. In fact, some concerns were raised but none with
 specificity. And as the JSONPath specification was also in the ratification process simultaneously,
 concerns regarding JSONPath were also difficult to evaluate. Finally, at the time of ratification
@@ -107,7 +106,7 @@ require its usage, though every example in the RFC of redaction by removal does 
 In other words, the client may be able to know the information that was removed using the “name”
 member of the redaction directive described in Section 4.2 of [@!RFC9537], though the RFC
 does not explain how the client is to go about doing this nor does it use normative RFC language
-to indicate this is the nature of an implementation. 
+to indicate this is the nature of the method to use. 
 
 The “name” member is a JSON object that takes either a “description” JSON string or a “type” JSON string:
 
@@ -122,6 +121,7 @@ or
   “description”: “Unregistered Value”
 }
 ````
+
 The “type” string contains a value registered with IANA in the RDAP JSON Values registry. This
 registry does not contain any formalism to describe the data to be redacted. The “description”
 string contains any text and has no definition. Therefore, RFC 9537 does not describe a
@@ -346,7 +346,7 @@ Take for example the "tel" property of jCard, which maybe rendered as:
 
 Should a server redact the phone extension, how does the tel URI get
 expressed: `tel:+1-555-555-1234;ext=` or `tel:+1-555-555-1234`? Is this redaction
-by removal or partial value? In both cases, JSONPath does not have the precision
+by removal or partial value? In both cases, JSONPath does not have the capability
 to specify which parts of the string are to be redacted.
 
 Additionally, the "tel" property is not required to be a tel URI but maybe unstructured
@@ -371,7 +371,8 @@ formal means of determing which part is to be redacted.
 Overall, both teams spent a considerable amount of time in attempts to implement clients
 for [@!RFC9537]. Both teams considered [@!RFC9537] highly complex and difficult to implement.
 Given this, it is unlikely that any general purpose RDAP client would be implemented using
-[@!RFC9537] without explicit, directed funding for that purpose.
+[@!RFC9537] without explicit, directed funding for that purpose. And it is likely that
+implementation among clients will differ substantially in behavor.
 
 # Security Considerations
 
