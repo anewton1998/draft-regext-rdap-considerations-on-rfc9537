@@ -3,7 +3,6 @@ Title = "Considerations on RFC 9537"
 area = "Applications and Real-Time Area (ART)"
 workgroup = "Registration Protocols Extensions (regext)"
 abbrev = "rfc9537-considered"
-updates = [7480]
 ipr= "trust200902"
 
 [seriesInfo]
@@ -11,7 +10,7 @@ name = "Internet-Draft"
 value = "draft-newton-regext-rdap-considerations-on-rfc9537-00"
 stream = "IETF"
 status = "informational"
-date = 2024-05-20T00:00:00Z
+date = 2024-05-29T00:00:00Z
 
 [[author]]
 initials="A."
@@ -44,25 +43,27 @@ be purposefully withheld from view. Quoting from Section 1:
 > the lack of RDAP client privileges, this extension is used to explicitly specify which
 > RDAP fields are not included in the RDAP response due to redaction.
 
-[@!RFC9537] specifies these redactions with JSONPath ([@!RFC 9535]), an expression language
+[@!RFC9537] specifies these redactions with JSONPath ([@!RFC9535]), an expression language
 designed to produce one or more JSON values from a JSON document. These JSONPath
 expressions are given in three distinct strings per redaction directive: “prePath”, “postPath”, and
 “replacementPath”. This RFC also modifies the IANA RDAP JSON Values registry with additional
 fields to be used in the process of presenting information about a redaction, however the
-registry does not contain JSONPath expressions.
+registry contains text intended for humans and does not explicitly contain JSONPath expressions.
 
 [@!RFC9537] defines four different methods of redaction: removal, empty value, partial value, and
 replacement value. Redaction by removal indicates that the redacted information is not in the
 RDAP JSON response. Redaction by empty value uses JSONPath to identify empty JSON values,
 and redaction by partial value does the same but for JSON values that are partially empty.
-Finally, redaction by replacement value instructs clients to substitute a redacted value with
-other data in the RDAP JSON response.
+Finally, redaction by replacement value instructs clients that a server has substituted
+a redacted value with other data in the RDAP JSON response.
 
 For redaction to be useful, a client must be able to show a user the information being redacted.
 This can be done in many ways depending on the client’s environment. For many clients, the
 method can be to make visual representations, such as changing a color or showing an icon,
-where the information would normally be expected to be found by a user or near that place.
+in the place where the information would normally be expected to be found by a user or near that place.
 Clients may also use audio cues in a similar fashion, especially those for the visually impaired.
+That is, clients merely rendering the values of "prePath", "postPath", or "replacementPath"
+are of little use to most humans.
 
 The information in this document was obtained through the experience of attempting to implement
 [@!RFC9537] in an RDAP web client, <https://lookup.icann.org>, and in an RDAP command-line
@@ -71,28 +72,17 @@ aspects of RFC 9537 were implemented in the RDAP server also at <https://github.
 Finally, a corpus of test cases for RDAP responses was created at 
 <https://github.com/anewton1998/redacted_examples>.
 
-# Timing of this Document
-
-The issues raised in this document have surfaced after the publication of RFC 9537, therefore it
-is reasonable to ask why these issues were not brought forward while RFC 9537 was under
-review by the IETF’s REGEXT working group. In fact, some concerns were raised but none with
-specificity. And as the JSONPath specification was also in the ratification process simultaneously,
-concerns regarding JSONPath were also difficult to evaluate. Finally, at the time of ratification
-there had been no attempts at client implementations leaving the discovery of these issues until
-after publication of RFC 9537.
-
 # Redaction by Removal
 
 This is the default redaction method in [@!RFC9537], and the most difficult to implement.
 
 In this method, the portions of the RDAP JSON response that are redacted are not present but
 may be specified in the “prePath” string. Because the information is removed from the response,
-the client will yield either an empty set when evaluating the “prePath” expression against the
-response or an incorrect value (see note at the end of this section regarding arrays). In other
-words, the client has no means to identify the information that has been redacted using the
-value of “prePath”.
+the client will yield an empty set when evaluating the “prePath” expression against the
+response. In other words, the client has no means to identify the 
+information that has been redacted using the value of “prePath”.
 
-To further complicate the usage of "prePath", [@!RFC9537] makes it OPTIONAL and does not
+Further, [@!RFC9537] makes "prePath" OPTIONAL and does not
 require its usage, though every example in the RFC of redaction by removal does use "prePath".
 
 [@!RFC9537] gives the following advice to the client in Section 5.1:
@@ -106,7 +96,7 @@ require its usage, though every example in the RFC of redaction by removal does 
 In other words, the client may be able to know the information that was removed using the “name”
 member of the redaction directive described in Section 4.2 of [@!RFC9537], though the RFC
 does not explain how the client is to go about doing this nor does it use normative RFC language
-to indicate this is the nature of the method to use. 
+to indicate this is the nature of the mechanism to use. 
 
 The “name” member is a JSON object that takes either a “description” JSON string or a “type” JSON string:
 
@@ -125,7 +115,7 @@ or
 The “type” string contains a value registered with IANA in the RDAP JSON Values registry. This
 registry does not contain any formalism to describe the data to be redacted. The “description”
 string contains any text and has no definition. Therefore, RFC 9537 does not describe a
-mechanism for a client implementer to determine the information that is to be redacted.
+mechanism for a client implementer to "explicitly" determine the information that is to be redacted.
 
 Client implementers must therefore devise a method not given by RFC 9537.
 
@@ -139,47 +129,24 @@ require all clients and servers to formally agree to the position of all items i
 Another possible solution would be to have the client dynamically construct an RDAP JSON
 response based on the “prePath” string. However, as JSONPath contains wildcards (e.g. “[*]”),
 recursion (e.g. “[..]”) and unbounded array slices (e.g. “[0:]”), this could lead to infinite
-length JSON objects and arrays and is therefore unworkable.
+length JSON objects and arrays and is practically unworkable.
 
 Both these solutions are theoretical, and each would be highly complex to implement.
-Therefore, for all practical purposes a client has no known method to implement redaction by
-removal.
+Therefore, for all practical purposes a client has no known method to "explicitly" identify
+the values of an RDAP response that have been redacted.
 
-Finally, redaction by removal can yield cases where the “prePath” expression does evaluate to
-data in the RDAP response. Consider the following RDAP response:
-
-````
-{
-  "rdapConformance": [
-    "rdap_level_0"
-  ],
-  "objectClassName": "domain",
-  "handle": "ABC123",
-  "ldhName": "example.com",
-  "nameservers": [
-    {
-      "objectClassName": "nameserver",
-      "ldhName": "ns1.example.com"
-    },
-    {
-      "objectClassName": "nameserver",
-      "ldhName": "ns2.example.com"
-    }
-  ]
-}
-````
-If the server was redacting the first nameserver of a domain with 3 nameservers and gave a
-“prePath” expression of `$[nameservers][0]`, this would evaluate to data in the RDAP response
-and the client may conclude that data was redacted when it had not been.
+Finally, the implication of the "prePath" expression is that it should always evaluate
+to an empty set. Left undefined is behavior when that is not the case nor any specific
+guidance to server implementers to verify it always evaluates to an empty set.
 
 # Redaction by Replacement Value
 
 The redaction by replacement value method has two modes. In the first mode, it signals that
 values that would have been in the RDAP JSON response have been replaced with other values
 that are in the RDAP JSON response. Like redaction by removal, a client has no formal means to
-determine the information that would have been in the response. Nor does RFC 9537 provide
-guidance to client implementers as to the purpose of signaling the replacement (i.e. what are
-clients to do with this information).
+determine the information that would have been in the response as this method relies on
+the "prePath" expression. Nor does RFC 9537 provide guidance to client implementers as to 
+the purpose of signaling the replacement (i.e. what are clients to do with this information).
 
 In the second mode, the “replacementPath” identifies values in an RDAP JSON response that
 are present but have been replaced with unidentified values. The example given in the RFC is
@@ -207,7 +174,7 @@ represented as “{}”, and an empty JSON array, which can be represented as �
 words, is an empty object “{}” or null?
 
 In addition to this, null is not the same type as other JSON types and therefore cannot be used
-anywhere a specific type, such as a boolean or number, has been specified unless specifically
+anywhere a specific type, such as a boolean or number, has been specified unless explicitly
 allowed by the JSON-using specification. That is, if RFC 9083 designates a value as a specific
 type a server cannot change that value to a null in an RDAP response and be compliant with 
 [@!RFC9083].
@@ -218,7 +185,7 @@ create RDAP invalid JSON, which is also not allowed by this RFC as stated in Sec
 > The resulting redacted RDAP response MUST comply with the format defined in
 > the RDAP RFCs, such as RFC 9083 and updates.
 
-For all practical purposes, redaction by empty value can only be used on a JSON string.
+For all practical purposes, redaction by empty value can only applied to a JSON string.
 
 # Types and Partial Value
 
@@ -230,14 +197,14 @@ null.
 Furthermore, when applying this redaction method to a string, object, or array a client has no
 way of determining which parts were redacted. The example given in the RFC is of the string
 “Vancouver\nBC\n1239\n" but the client has no means of determining if the redacted portion of
-the string comes before, after, or in the middle of the string given.
-
+the string comes before, after, or in the middle of this string.
 
 The same issue applies to JSON objects and arrays. Though some readers may deduce that
 redaction by partial value only applies to strings, the RFC does not state this.
 
 Therefore, for all practical purposes there is no distinction between redaction by partial value
-and redaction by empty value. 
+and redaction by empty value. Furthermore, if a client cannot determine which parts of a string
+have been redacted, then it cannot adequately present this information to a user.
 
 # Overlapping and Nesting Redactions
 
@@ -326,9 +293,13 @@ used in [@!RFC9537] is problematic as it relates to interoperability between cli
 
 To help with testing, a corpus of RDAP responses using [@!RFC9537] was created: <https://github.com/anewton1998/redacted_examples>.
 As a consequence, shortcomings were discovered in the JSONPath libraries being used and 
-developers on both teams attempted various workarounds to no avail.
+developers on both teams attempted various workarounds to no avail. No discernible pattern
+was detected with regard to compatibility issues, but every JSONPath library utilized by the teams had
+issues.
 
-# Pitfalls
+# Other Considerations
+
+## Tel URIs
 
 There also exist many "corner cases" that server operators need to consider.
 Take for example the "tel" property of jCard, which maybe rendered as:
@@ -364,23 +335,80 @@ text. For example:
 ```
 
 As the string to be redacted by partial value may take many forms, clients have no
-formal means of determing which part is to be redacted.
+formal means of determine which part is to be redacted.
+
+## Structured and Unstructured Addresses
+
+Server implementers should also take care regarding the redaction used for jCard
+postal addresses. Within jCard, postal addresses may be expressed as either structured
+or unstructured. Here is an example of structured address from [@!RFC9083]:
+
+```
+["adr",
+  { "type":"work" },
+  "text",
+  [
+    "",
+    "Suite 1234",
+    "4321 Rue Somewhere",
+    "Quebec",
+    "QC",
+    "G1V 2M2",
+    "Canada"
+  ]
+]
+```
+
+And here is an example of an unstructured postal address from [@!RFC9083]:
+
+```
+["adr",
+  {
+    "type":"home",
+    "label":"123 Maple Ave\nSuite 90001\nVancouver\nBC\n1239\n"
+  },
+  "text",
+  [
+    "", "", "", "", "", "", ""
+  ]
+],
+```
+
+As both the JSONPath and the redaction method are different for each of these, a
+server implementer should take care to use the proper values. Additionally,
+if the server references an IANA registered redaction, the registration
+should cover both cases.
 
 # Complexity
 
 Overall, both teams spent a considerable amount of time in attempts to implement clients
 for [@!RFC9537]. Both teams considered [@!RFC9537] highly complex and difficult to implement.
-Given this, it is unlikely that any general purpose RDAP client would be implemented using
+Given this, it is unlikely that any general purpose RDAP client would be implementing
 [@!RFC9537] without explicit, directed funding for that purpose. And it is likely that
-implementation among clients will differ substantially in behavor.
+implementation among clients will differ substantially in behavior.
+
+# Path Forward
+
+To summarize the findings:
+
+* Redaction by removal cannot be accomplished by "explicitly identifying" the parts of an RDAP JSON response that have been removed.
+* Redaction by empty value is only applicable to JSON strings.
+* Redaction by partial value cannot specify the parts of the value redacted, is only applicable to strings, and therefore no different
+than redaction by empty value.
+* Redaction by replacement value cannot identify the values that were replaced.
+* The usage of JSONPath is too broad, rendering the mechanisms of [@!RFC9537] that do work to be non-interoperable.
+* Overlaps in JSONPath expressions can present challenges to clients attempting to display textual explanations.
+
+One potential fix would be to instruct clients to always ignore the JSONPath expressions and instead strictly key
+off the redacted registrations in the IANA registry. The implications of this approach is that each registration
+would need to clearly specify the parts of RDAP to be redacted, and client implementers would be required to update
+their client software as frequently as necessary to accommodate new registrations. In other words, this approach
+would not "explicitly identify" redacted RDAP data, nor would it give servers the ability to express redaction reasons
+in multiple languages.
 
 # Security Considerations
 
 TBD.
-
-# IANA Considerations
-
-TBD: registration of "simpleRedaction".
 
 {backmatter}
 
