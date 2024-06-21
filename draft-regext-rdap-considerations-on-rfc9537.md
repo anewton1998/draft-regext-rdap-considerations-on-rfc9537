@@ -7,10 +7,10 @@ ipr= "trust200902"
 
 [seriesInfo]
 name = "Internet-Draft"
-value = "draft-newton-regext-rdap-considerations-on-rfc9537-00"
+value = "draft-newton-regext-rdap-considerations-on-rfc9537-01"
 stream = "IETF"
 status = "informational"
-date = 2024-05-29T00:00:00Z
+date = 2024-07-01T00:00:00Z
 
 [[author]]
 initials="A."
@@ -335,7 +335,9 @@ text. For example:
 ```
 
 As the string to be redacted by partial value may take many forms, clients have no
-formal means of determine which part is to be redacted.
+formal means of determine which part is to be redacted. In other words, even if
+the "tel" property value is redacted by partial value, there is no way for the
+client to know which part was redacted vs which part was not redacted.
 
 ## Structured and Unstructured Addresses
 
@@ -379,6 +381,9 @@ server implementer should take care to use the proper values. Additionally,
 if the server references an IANA registered redaction, the registration
 should cover both cases.
 
+For clients, redaction by partial value is especially difficult as a client has
+no formal means of determing which part of the address is redacted.
+
 # Complexity
 
 Overall, both teams spent a considerable amount of time in attempts to implement clients
@@ -386,8 +391,6 @@ for [@!RFC9537]. Both teams considered [@!RFC9537] highly complex and difficult 
 Given this, it is unlikely that any general purpose RDAP client would be implementing
 [@!RFC9537] without explicit, directed funding for that purpose. And it is likely that
 implementation among clients will differ substantially in behavior.
-
-# Path Forward
 
 To summarize the findings:
 
@@ -399,12 +402,118 @@ than redaction by empty value.
 * The usage of JSONPath is too broad, rendering the mechanisms of [@!RFC9537] that do work to be non-interoperable.
 * Overlaps in JSONPath expressions can present challenges to clients attempting to display textual explanations.
 
-One potential fix would be to instruct clients to always ignore the JSONPath expressions and instead strictly key
-off the redacted registrations in the IANA registry. The implications of this approach is that each registration
-would need to clearly specify the parts of RDAP to be redacted, and client implementers would be required to update
-their client software as frequently as necessary to accommodate new registrations. In other words, this approach
-would not "explicitly identify" redacted RDAP data, nor would it give servers the ability to express redaction reasons
-in multiple languages.
+# Examining Fixes to RDAP Redaction
+
+There are a number of potential solutions. Some are not mutually exclusive of the others, but most are not
+backwards compatible with RFC 9537.
+
+## Make JSONPath Optional
+
+At the moment, JSONPath is only OPTIONAL for redaction by removal. For all other methods of redaction, [@!RFC9537]
+requires at least the "postPath" string containing JSONPath.
+Section 4.2 does state that the various path string are optional, however the RFC states this for the purposes
+of re-using the same data structure for the all the redacted methods. However, section 4.2 also states:
+
+> The "postPath" member MUST be set when the redacted field does exist in the redacted response for the 
+> Redaction by Empty Value Method (Section 3.2), the Redaction by Partial Value Method (Section 3.3), 
+> and the Redaction by Replacement Value Method (Section 3.4).
+
+Therefore JSONPath is required for all but the redaction by removal method. All 21 examples in the RFC also
+use JSONPath further reinforcing that no fair reading of the RFC allows JSONPath to be completely optional according
+to the defined "redacted" data structure. An update to this RFC removing the MUST statement would not be
+backwards compatible.
+
+It may be possible to create a backward compatible approach, as defined by the current "redacted" JSON structure,
+by specifying all JSONPath members be a valid placeholder, such as "$.". In other words, when clients see "$."
+they know to ignore the JSONPath.
+
+## Redaction by Notice
+
+```
+"remarks" :
+[
+  {
+    "title" : "Domain ID Redaction",
+    "type" : "domain id redaction",
+    "lang" : "en",
+    "description" :
+    [
+      "The Registry Domain ID has been redacted"
+    ],
+    "links" :
+    [
+      {
+        "value" : "https://example.net/entity/XXXX",
+        "rel" : "about",
+        "type" : "text/html",
+        "href" : "https://www.example.com/redaction_policy.html"
+      }
+    ]
+  }
+]
+```
+
+## Redaction by Registration
+
+If JSONPath expressions are ignored, an alternative approach would be to use redaction by registration, wherein
+the redactions are signified with the "type" string in the "name" object:
+
+```
+“name” : {
+  “type”: “Registered Value”
+}
+```
+
+Note that this is not possible with the "description" version, therefore RFC 9537 would need to be revised
+to disallow use of "description".
+
+In this method, the client is to know the redaction based on the registration in the IANA registration.
+
+This method has a number of drawbacks:
+
+1. It turns each IANA registration into a psuedo-specification.
+2. The RFC would need to be updated to explicitly describe this process.
+3. All redactions will be hardcoded, thus pushing onto the client implementer to discover every possible means of redaction, reducing interoperability.
+4. Server operators will be dependent on the update cycle of clients.
+
+Additionally, the ability to signal special processing to a client by a server is already present in
+RDAP via [@!RFC9083] using the `notices` array.
+
+```
+"notices" :
+[
+  {
+    "title" : "Domain ID Redaction",
+    "type" : "domain id redaction",
+    "lang" : "en",
+    "description" :
+    [
+      "The Registry Domain ID has been redacted"
+    ],
+    "links" :
+    [
+      {
+        "value" : "https://example.net/entity/XXXX",
+        "rel" : "about",
+        "type" : "text/html",
+        "href" : "https://www.example.com/redaction_policy.html"
+      }
+    ]
+  }
+]
+```
+
+Additionally, `notices` are more flexible than the "redaction" structure because
+they may be repeated allowing for the expression of the descriptive text in
+multiple languages and they may be accompanied with a link to a redaction policy.
+
+## Scoping Down JSONPath
+
+## Using JSON Pointer
+
+## Redaction by Placeholder
+
+## Something Else
 
 # Security Considerations
 
